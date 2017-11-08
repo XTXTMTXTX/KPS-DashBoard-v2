@@ -39,7 +39,7 @@ void addqueue(){
 	que[(tail++)%1000]=CPUclock();
 }
 void popqueue(){
-	while(1){
+	while(1){		
 		Sleep(10);
 		while(head<tail&&que[head%1000]<(CPUclock()-1000)){
 			head++;
@@ -60,7 +60,7 @@ LRESULT CALLBACK kb_proc(int code,WPARAM w,LPARAM l){
 void KHK(){
 	g_main_tid=GetCurrentThreadId();
 	SetConsoleCtrlHandler(&con_handler,TRUE);
-    g_kb_hook=SetWindowsHookEx(WH_KEYBOARD_LL,&kb_proc,GetModuleHandle (NULL),0);
+    g_kb_hook=SetWindowsHookEx(WH_KEYBOARD_LL,&kb_proc,GetModuleHandle(NULL),0);
 	MSG msg;
     while(GetMessage(&msg,NULL,0,0)){
 		TranslateMessage (&msg);
@@ -98,6 +98,7 @@ void init(){
 IDirect3DDevice9*       _device;
 IDirect3DVertexBuffer9* _vb;
 IDirect3DIndexBuffer9*  _ib;
+D3DPRESENT_PARAMETERS d3dpp;
 IDirect3DTexture9 *NAtex=0,*Num0tex=0,*Num1tex=0,*Num2tex=0,*Num3tex=0,*Num4tex=0,*Num5tex=0,*Num6tex=0,*Num7tex=0,*Num8tex=0,*Num9tex=0,*BG1tex=0,*BG2tex=0,*Ptex=0;
 bool InitD3D(HINSTANCE hInstance,int width,int height,bool windowed,D3DDEVTYPE deviceType,IDirect3DDevice9 ** device);
 LRESULT CALLBACK WndProc(HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam);
@@ -167,7 +168,6 @@ bool InitD3D(HINSTANCE hInstance,int width,int height,bool windowed,D3DDEVTYPE d
 	d3d9->GetDeviceCaps(D3DADAPTER_DEFAULT,deviceType,&caps);
 	int vp=0;
 	if(caps.DevCaps&D3DDEVCAPS_HWTRANSFORMANDLIGHT)vp=D3DCREATE_HARDWARE_VERTEXPROCESSING;else vp=D3DCREATE_SOFTWARE_VERTEXPROCESSING;
-	D3DPRESENT_PARAMETERS d3dpp;
 	d3dpp.BackBufferWidth=SCREEN_WIDTH;
 	d3dpp.BackBufferHeight=SCREEN_HEIGHT;
 	d3dpp.BackBufferFormat=D3DFMT_A8R8G8B8;
@@ -256,7 +256,7 @@ void Drawnumber(const int &x){
 		break;
 	}
 }
-bool Setup() {
+bool Setup(){
 	InitCube();
 	D3DLIGHT9 light;
 	::ZeroMemory(&light,sizeof(light));
@@ -303,7 +303,14 @@ bool DisPlay() {
 	MSG msg;
 	::ZeroMemory(&msg,sizeof(MSG));
 	double x;
+	HRESULT hr;
 	while (msg.message!=WM_QUIT){
+		hr=_device->TestCooperativeLevel();
+		// Render failed, try to reset device
+		if(hr==D3DERR_DEVICENOTRESET){
+		   	_device->Reset(&d3dpp);
+		   	Setup();
+		}
 		KT1=min(100,KC);
     	if(CPUclock()>KPSClock+T0)T0=CPUclock();
 		if(KT!=KT1&&(CPUclock()>KPSClock/2.0+T0)){
